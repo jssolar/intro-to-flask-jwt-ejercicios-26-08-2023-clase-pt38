@@ -60,23 +60,53 @@ def register():
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    pass
+    
+    username= request.json.get("username")
+    password= request.json.get("password")
 
+    # validacion de usuario, de datos ingresados
+    if not username:
+        return jsonify({"error": "username is requare"}), 422
+    
+    if not password:
+        return jsonify({"error": "password is requare"}), 422
+
+# BUSCAMOS AL USUARIO
+    user = User.query.filter_by(username=username).first()
+    
+# SI NO EXISTE EL USUARIO
+    if not user: 
+        return jsonify({"message": "tu usuario o contraseña son incorrectos"}), 401
+    
+# LAVIDAMOS LA CONTRASEÑA
+    if not check_password_hash(user.password, password):
+        return jsonify({"message": "tu usuario o contraseña son incorrectos"}), 401 
+        
+
+# generacion/creacion de token
+# antes de generar el token, genero una variable
+# expires = datetime.timedelta(days=6)
+# access_token = create_access_token(identity=user.id, expires_delta=expires)
+    access_token = create_access_token(identity=user.id)
+    
+    data = {
+        "access_token": access_token,
+        "type": "Bearer",
+        "user": user.serialize()
+    }
+
+
+    return jsonify(data), 200
 
 
 # generando ruta privada
-@app.route('/api/profile', methods=['POST'])
+@app.route('/api/profile', methods=['GET'])
+@jwt_required()
 def profile():
-    pass
-
-
-
-
-
-
-
-
-
+    
+    id = get_jwt_identity()
+    user = User.query.get(id)
+    return jsonify({"message": "ruta  privada", "user": user.username}), 200
 
 
 
